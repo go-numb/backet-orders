@@ -24,6 +24,7 @@ cargo run -- [OPTIONS]
 オプション：
 - `-n, --top-n <TOP_N>`: 取得する上位ランキングアイテムの数 (デフォルト: 30)
 - `-r, --price-ratio <PRICE_RATIO>`: 価格比率のしきい値 (デフォルト: 0.01)
+- `-p, --profit-price-ratio <PROFIT_PRICE_RATIO>`: 価格比率のしきい値 (デフォルト: 0.01)
 - `-u, --usd <USD>`: 注文に使用するUSD金額 (デフォルト: 100.0)
 
 ## 依存関係
