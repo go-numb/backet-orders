@@ -40,6 +40,8 @@ jobs:
           mkdir -p release
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp target/${{ matrix.target }}/release/*.exe release/
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            find target/${{ matrix.target }}/release -maxdepth 1 -type f -perm +111 -not -name "*.d" -exec cp {} release/ \;
           else
             find target/${{ matrix.target }}/release -maxdepth 1 -type f -executable -not -name "*.d" -exec cp {} release/ \;
           fi
