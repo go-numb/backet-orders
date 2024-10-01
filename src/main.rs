@@ -19,14 +19,14 @@ pub struct Args {
     pub top_n: usize,
 
     /// Price ratio threshold
-    #[arg(short = 'r', long, default_value_t = 0.01)]
+    #[arg(short = 'r', long, default_value_t = 0.0025)]
     pub price_ratio: f64,
 
     /// Profit trigger Price ratio threshold
-    #[arg(short = 'p', long, default_value_t = 0.01)]
+    #[arg(short = 'p', long, default_value_t = 0.1)]
     pub profit_price_ratio: f64,
     /// Loss trigger Price ratio threshold
-    #[arg(short = 'l', long, default_value_t = 0.01)]
+    #[arg(short = 'l', long, default_value_t = 0.1)]
     pub loss_price_ratio: f64,
 
     /// USD
