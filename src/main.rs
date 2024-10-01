@@ -25,6 +25,9 @@ pub struct Args {
     /// Profit trigger Price ratio threshold
     #[arg(short = 'p', long, default_value_t = 0.01)]
     pub profit_price_ratio: f64,
+    /// Loss trigger Price ratio threshold
+    #[arg(short = 'l', long, default_value_t = 0.01)]
+    pub loss_price_ratio: f64,
 
     /// USD
     #[arg(short = 'u', long, default_value_t = 100.0)]
@@ -36,7 +39,7 @@ async fn main() {
     env::set_var("RUST_LOG", "trace");
     env_logger::init();
 
-    let (top_n, price_ratio, profit_price_ratio, usd) = {
+    let (top_n, price_ratio, profit_price_ratio, loss_price_ratio, usd) = {
         let args = Args::parse();
         // parse number
         let top_n = args.top_n;
@@ -46,9 +49,18 @@ async fn main() {
         // parse profit ratio
         let profit_price_ratio = args.profit_price_ratio;
 
+        // parse loss ratio
+        let loss_price_ratio = args.loss_price_ratio;
+
         // parse usd
         let usd = args.usd;
-        (top_n, price_ratio, profit_price_ratio, usd)
+        (
+            top_n,
+            price_ratio,
+            profit_price_ratio,
+            loss_price_ratio,
+            usd,
+        )
     };
 
     // 実行前にコンソールに確認を求める
@@ -151,7 +163,7 @@ async fn main() {
         );
 
         let ltp = target.index_price.parse::<f64>().unwrap();
-
+        let oprice = ltp * (1.0 - price_ratio);
         let res: Value = client
             .post(
                 "/v5/order/create",
@@ -161,13 +173,14 @@ async fn main() {
                     "isLeverage": 1,
                     "side": "Buy",
                     "orderType": "Limit",
-                    "price": format!("{:.*}",decimal_places, ltp * (1.0 - price_ratio)),
+                    "price": format!("{:.*}",decimal_places, oprice),
                     "qty": format!("{:.*}",qty_decimal_places, usd / ltp),
 
 
-                    "triggerDirection": 1, // upside trigger
-                    "triggerPrice": format!("{:.*}",decimal_places, ltp * (1.0 + profit_price_ratio)),
-                    "triggerBy": "MarkPrice",
+                    "takeProfit": format!("{:.*}",decimal_places, oprice * (1.0 + profit_price_ratio)),
+                    "stopLoss": format!("{:.*}",decimal_places, oprice * (1.0 - loss_price_ratio)),
+                    "tpTriggerBy": "MarkPrice",
+                    "slTriggerBy": "IndexPrice",
 
                     "timeInForce": "PostOnly",
                 })),
