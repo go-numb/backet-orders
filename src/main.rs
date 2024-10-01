@@ -154,7 +154,8 @@ async fn main() {
         println!("{:?}", target.symbol);
 
         // order to symbol
-        let decimal_places = get_decimal_places(instruments[&target.symbol].price_scale.as_str());
+        let decimal_places =
+            get_decimal_places(instruments[&target.symbol].price_filter.min_price.as_str());
         let qty_decimal_places = get_decimal_places(
             instruments[&target.symbol]
                 .lot_size_filter
@@ -164,26 +165,27 @@ async fn main() {
 
         let ltp = target.index_price.parse::<f64>().unwrap();
         let oprice = ltp * (1.0 - price_ratio);
+        let body = json!({
+            "category": "linear",
+            "symbol": target.symbol,
+            "isLeverage": 1,
+            "side": "Buy",
+            "orderType": "Limit",
+            "price": format!("{:.*}",decimal_places, oprice),
+            "qty": format!("{:.*}",qty_decimal_places, usd / ltp),
+
+
+            "takeProfit": format!("{:.*}",decimal_places, oprice * (1.0 + profit_price_ratio)),
+            "stopLoss": format!("{:.*}",decimal_places, oprice * (1.0 - loss_price_ratio)),
+            "tpTriggerBy": "MarkPrice",
+            "slTriggerBy": "IndexPrice",
+
+            "timeInForce": "PostOnly",
+        });
         let res: Value = client
             .post(
                 "/v5/order/create",
-                Some(json!({
-                    "category": "linear",
-                    "symbol": target.symbol,
-                    "isLeverage": 1,
-                    "side": "Buy",
-                    "orderType": "Limit",
-                    "price": format!("{:.*}",decimal_places, oprice),
-                    "qty": format!("{:.*}",qty_decimal_places, usd / ltp),
-
-
-                    "takeProfit": format!("{:.*}",decimal_places, oprice * (1.0 + profit_price_ratio)),
-                    "stopLoss": format!("{:.*}",decimal_places, oprice * (1.0 - loss_price_ratio)),
-                    "tpTriggerBy": "MarkPrice",
-                    "slTriggerBy": "IndexPrice",
-
-                    "timeInForce": "PostOnly",
-                })),
+                Some(body.clone()),
                 [BybitOption::HttpAuth(BybitHttpAuth::V3AndAbove)],
             )
             .await
@@ -191,8 +193,8 @@ async fn main() {
 
         if res["retCode"].as_i64().unwrap() != 0 {
             error!(
-                "{}, symbol: {}, response: {:?}",
-                res["retMsg"], target.symbol, res
+                "{}, symbol: {}, request: {}",
+                res["retMsg"], target.symbol, body
             );
             continue;
         } else {
